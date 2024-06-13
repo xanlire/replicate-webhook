@@ -1,12 +1,19 @@
-import { Controller, Get } from '@nestjs/common';
+import { Body, Controller, Post, Sse } from '@nestjs/common';
 import { AppService } from './app.service';
+import { Prediction } from 'src/prediction';
+import { map } from 'rxjs';
 
-@Controller()
+@Controller('replicate/webhook')
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+    constructor(private readonly appService: AppService) {}
 
-  @Get()
-  getHello(): string {
-    return this.appService.getHello();
-  }
+    @Post()
+    async handle(@Body() prediction: Prediction) {
+        this.appService.emit(prediction.status);
+    }
+
+    @Sse('subscribe')
+    async subscribe() {
+        return this.appService.subscribe().pipe(map((data) => ({ data }) as MessageEvent));
+    }
 }
